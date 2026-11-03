@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nlalpha"
+version = "0.1.0"
+description = "Install-and-use bundle for the NLAlpha community backtesting stack"
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "nlalpha-core==0.7.0",
+    "nlalpha-data==0.3.1",
+    "nlalpha-strategy==0.2.0",
+    "nlalpha-backtest==0.8.0",
+    "nlalpha-capability==0.2.0",
+    "nlalpha-family-cta==0.4.0",
+    "nlalpha-nautilus==0.9.0",
+    "nlalpha-tushare==0.3.0",
+    "nlalpha-talib==0.2.0",
+    "nlalpha-performance==0.6.0",
+]
+
+[project.optional-dependencies]
+s3 = ["nlalpha-data[s3]==0.3.1", "nlalpha-backtest[redis]==0.8.0"]
+
+[project.scripts]
+nlalpha = "nlalpha.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/ruimarj/nlalpha"
+Repository = "https://github.com/ruimarj/nlalpha"
+Issues = "https://github.com/ruimarj/nlalpha/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nlalpha"]
