@@ -54,6 +54,6 @@ def run_doctor(_args) -> int:
         exit_code = 1
     if "tushare" in data_providers or distribution_installed("nlalpha-tushare"):
         if not os.environ.get("TUSHARE_TOKEN"):
-            print("TUSHARE_TOKEN: not set (Tushare data source will be unavailable)")
+            print("TUSHARE_TOKEN: not set (set it and NLALPHA_DATA_PROVIDER=tushare to use Tushare)")
     print("Next: `nlalpha up` starts the four local services; `nlalpha serve ...` runs one service")
     return exit_code

@@ -48,12 +48,12 @@ workspace and the backtest job store.
 
 ### Configuration
 
-The default image is `ghcr.io/ruimarj/nlalpha:0.1.6`. Set these variables before
+The default image is `ghcr.io/ruimarj/nlalpha:0.1.7`. Set these variables before
 `docker compose up -d` to change the image, ports, or data provider:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `NLALPHA_IMAGE` | `ghcr.io/ruimarj/nlalpha:0.1.6` | Container image. |
+| `NLALPHA_IMAGE` | `ghcr.io/ruimarj/nlalpha:0.1.7` | Container image. |
 | `NLALPHA_DATA_PORT` | `8001` | Host port for the data service. |
 | `NLALPHA_STRATEGY_PORT` | `8002` | Host port for the strategy service. |
 | `NLALPHA_CAPABILITY_PORT` | `8003` | Host port for the capability service. |
@@ -67,19 +67,17 @@ NLALPHA_CAPABILITY_PORT=18003 NLALPHA_BACKTEST_PORT=18004 \
 docker compose up -d
 ```
 
-`yfinance` is the default provider. Tushare is available through the `china` extra and
-requires `TUSHARE_TOKEN`. The published image ships the default provider; build a
-derived image to add the extra:
+`yfinance` is the default provider and needs no credentials. The published image also
+ships Tushare; select it with `NLALPHA_DATA_PROVIDER=tushare` and a `TUSHARE_TOKEN`
+that has the required data permissions:
 
-```dockerfile
-FROM ghcr.io/ruimarj/nlalpha:0.1.6
-USER root
-RUN pip install --no-cache-dir "nlalpha[china]==0.1.6"
-USER nlalpha
+```bash
+export TUSHARE_TOKEN=...
+export NLALPHA_DATA_PROVIDER=tushare
+docker compose up -d
 ```
 
-Then run the stack with `NLALPHA_IMAGE=nlalpha:tushare`,
-`NLALPHA_DATA_PROVIDER=tushare`, and `TUSHARE_TOKEN`.
+Python installs use the `china` extra to add Tushare.
 
 ## Local Python mode
 
@@ -125,10 +123,10 @@ nlalpha mcp-config
 
 | Option | Default | Purpose |
 |---|---|---|
-| `--provider` | `yfinance` | Data provider; `tushare` requires the `china` extra and `TUSHARE_TOKEN`. |
+| `--provider` | `yfinance` | Data provider; `tushare` requires `TUSHARE_TOKEN` (included in the published image; Python installs use the `china` extra). |
 | `--redis-url` | disposable Redis | Use an existing Redis instead of starting one. |
 | `--docker` | off | Run the stack with Docker Compose. |
-| `--image` | `ghcr.io/ruimarj/nlalpha:0.1.6` | Image used with `--docker`. |
+| `--image` | `ghcr.io/ruimarj/nlalpha:0.1.7` | Image used with `--docker`. |
 | `--data-port` | `8001` | Data service port. |
 | `--strategy-port` | `8002` | Strategy service port. |
 | `--capability-port` | `8003` | Capability service port. |
@@ -168,7 +166,8 @@ usually provided by Docker Desktop. The default state directory expands to
 
 - `yfinance` is the default provider. It is unofficial and may be rate limited by the
   upstream service.
-- Tushare requires the `china` extra and `TUSHARE_TOKEN`.
+- Tushare is included in the published image and requires `TUSHARE_TOKEN` with the
+  necessary data permissions; Python installs use the `china` extra.
 - The local stack binds services to `127.0.0.1` with single-user identity. It is a
   development and quick-start surface, not a hardened multi-user deployment.
 - The platform adapter is not included; it carries platform identity, sandbox, and

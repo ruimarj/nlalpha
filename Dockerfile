@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir \
         --index-url "$PIP_INDEX_URL" \
         ${PIP_EXTRA_INDEX_URL:+--extra-index-url "$PIP_EXTRA_INDEX_URL"} \
         ${PIP_TRUSTED_HOST:+--trusted-host "$PIP_TRUSTED_HOST"} \
-        .
+        '.[china]'
 
 RUN useradd --create-home --uid 10001 nlalpha \
     && mkdir -p /state \

@@ -11,7 +11,7 @@ services:
       retries: 20
 
   data:
-    image: ${NLALPHA_IMAGE:-ghcr.io/ruimarj/nlalpha:0.1.6}
+    image: ${NLALPHA_IMAGE:-ghcr.io/ruimarj/nlalpha:0.1.7}
     command: ["serve", "data"]
     restart: unless-stopped
     environment:
@@ -38,7 +38,7 @@ services:
       start_period: 30s
 
   strategy:
-    image: ${NLALPHA_IMAGE:-ghcr.io/ruimarj/nlalpha:0.1.6}
+    image: ${NLALPHA_IMAGE:-ghcr.io/ruimarj/nlalpha:0.1.7}
     command: ["serve", "strategy"]
     restart: unless-stopped
     environment:
@@ -55,7 +55,7 @@ services:
       start_period: 30s
 
   capability:
-    image: ${NLALPHA_IMAGE:-ghcr.io/ruimarj/nlalpha:0.1.6}
+    image: ${NLALPHA_IMAGE:-ghcr.io/ruimarj/nlalpha:0.1.7}
     command: ["serve", "capability"]
     restart: unless-stopped
     environment:
@@ -72,7 +72,7 @@ services:
       start_period: 30s
 
   backtest:
-    image: ${NLALPHA_IMAGE:-ghcr.io/ruimarj/nlalpha:0.1.6}
+    image: ${NLALPHA_IMAGE:-ghcr.io/ruimarj/nlalpha:0.1.7}
     command: ["serve", "backtest"]
     restart: unless-stopped
     environment:

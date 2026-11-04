@@ -6,7 +6,7 @@ import subprocess
 
 from .errors import UpError
 
-DEFAULT_IMAGE = "ghcr.io/ruimarj/nlalpha:0.1.6"
+DEFAULT_IMAGE = "ghcr.io/ruimarj/nlalpha:0.1.7"
 COMPOSE_FILENAME = "compose.yaml"
 
 _COMPOSE_TEMPLATE = """\

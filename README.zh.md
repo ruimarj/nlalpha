@@ -44,11 +44,11 @@ docker compose down
 
 ### 配置
 
-默认镜像为 `ghcr.io/ruimarj/nlalpha:0.1.6`。在 `docker compose up -d` 前设置以下变量可更换镜像、端口或数据提供方：
+默认镜像为 `ghcr.io/ruimarj/nlalpha:0.1.7`。在 `docker compose up -d` 前设置以下变量可更换镜像、端口或数据提供方：
 
 | 变量 | 默认值 | 用途 |
 |---|---|---|
-| `NLALPHA_IMAGE` | `ghcr.io/ruimarj/nlalpha:0.1.6` | 容器镜像。 |
+| `NLALPHA_IMAGE` | `ghcr.io/ruimarj/nlalpha:0.1.7` | 容器镜像。 |
 | `NLALPHA_DATA_PORT` | `8001` | data 服务的宿主端口。 |
 | `NLALPHA_STRATEGY_PORT` | `8002` | strategy 服务的宿主端口。 |
 | `NLALPHA_CAPABILITY_PORT` | `8003` | capability 服务的宿主端口。 |
@@ -62,16 +62,15 @@ NLALPHA_CAPABILITY_PORT=18003 NLALPHA_BACKTEST_PORT=18004 \
 docker compose up -d
 ```
 
-`yfinance` 是默认提供方。Tushare 通过 `china` 附加项提供，并需要 `TUSHARE_TOKEN`。发布镜像包含默认提供方；如需附加项，构建派生镜像：
+`yfinance` 是默认提供方，无需凭据。发布镜像同时内置 Tushare；将 `NLALPHA_DATA_PROVIDER` 设为 `tushare`，并提供具备相应数据权限的 `TUSHARE_TOKEN` 即可：
 
-```dockerfile
-FROM ghcr.io/ruimarj/nlalpha:0.1.6
-USER root
-RUN pip install --no-cache-dir "nlalpha[china]==0.1.6"
-USER nlalpha
+```bash
+export TUSHARE_TOKEN=...
+export NLALPHA_DATA_PROVIDER=tushare
+docker compose up -d
 ```
 
-然后使用 `NLALPHA_IMAGE=nlalpha:tushare`、`NLALPHA_DATA_PROVIDER=tushare` 与 `TUSHARE_TOKEN` 运行栈。
+Python 安装用户通过 `china` 附加项获得 Tushare。
 
 ## 本地 Python 模式
 
@@ -109,10 +108,10 @@ nlalpha mcp-config
 
 | 选项 | 默认值 | 用途 |
 |---|---|---|
-| `--provider` | `yfinance` | 数据提供方；`tushare` 需要 `china` 附加项与 `TUSHARE_TOKEN`。 |
+| `--provider` | `yfinance` | 数据提供方；`tushare` 需要 `TUSHARE_TOKEN`（发布镜像已内置；Python 安装使用 `china` 附加项）。 |
 | `--redis-url` | 一次性 Redis | 使用已有 Redis，而不是新启动一个。 |
 | `--docker` | 关闭 | 使用 Docker Compose 运行栈。 |
-| `--image` | `ghcr.io/ruimarj/nlalpha:0.1.6` | `--docker` 使用的镜像。 |
+| `--image` | `ghcr.io/ruimarj/nlalpha:0.1.7` | `--docker` 使用的镜像。 |
 | `--data-port` | `8001` | data 服务端口。 |
 | `--strategy-port` | `8002` | strategy 服务端口。 |
 | `--capability-port` | `8003` | capability 服务端口。 |
@@ -143,7 +142,7 @@ pip install "nlalpha[china]"
 ## 要求与限制
 
 - `yfinance` 是默认提供方。它属于非官方接入，可能受上游服务限流影响。
-- Tushare 需要 `china` 附加项与 `TUSHARE_TOKEN`。
+- 发布镜像已内置 Tushare，使用时需要具备相应数据权限的 `TUSHARE_TOKEN`；Python 安装通过 `china` 附加项获得。
 - 本地栈将服务绑定到 `127.0.0.1` 并使用单用户身份，面向开发与快速开始，不是加固的多用户部署。
 - 平台适配器不包含在内；它承载平台身份、沙箱与部署语义。
 - 领域契约与逻辑位于 `nlalpha-core` 与各服务包中。`nlalpha` 分发仅提供 `nlalpha.cli` 命名空间与依赖版本锁定。
