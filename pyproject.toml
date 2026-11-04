@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nlalpha"
-version = "0.1.2"
+version = "0.1.3"
 description = "Install-and-use bundle for the NLAlpha community backtesting stack"
 readme = "README.md"
 license = "AGPL-3.0-or-later"
@@ -17,7 +17,7 @@ dependencies = [
     "nlalpha-backtest==0.8.0",
     "nlalpha-capability==0.2.0",
     "nlalpha-family-cta==0.4.0",
-    "nlalpha-nautilus==0.9.0",
+    "nlalpha-nautilus==0.9.1",
     "nlalpha-tushare==0.3.2",
     "nlalpha-talib==0.2.0",
     "nlalpha-performance==0.6.0",
