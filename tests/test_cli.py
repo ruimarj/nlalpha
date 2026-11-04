@@ -5,13 +5,14 @@ from importlib.metadata import PackageNotFoundError
 from io import StringIO
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+import signal
 from types import SimpleNamespace
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-from nlalpha.cli import doctor, main, redis_support, runtime, serve, up
+from nlalpha.cli import doctor, main, process, redis_support, runtime, serve, up
 from nlalpha.cli.errors import UpError
 
 
@@ -370,3 +371,50 @@ class RunStateTests(unittest.TestCase):
         state = {"services": {"data": {"pid": 111}}, "redis": {"pid": 222}}
         with patch.object(runtime, "pid_alive", return_value=False):
             self.assertFalse(runtime.state_has_running(state))
+
+
+class PlatformSupportTests(unittest.TestCase):
+    def test_pid_alive_uses_windows_helper(self):
+        with patch.object(process.os, "name", "nt"), \
+                patch.object(process, "_pid_alive_windows", return_value=True) as helper:
+            self.assertTrue(process.pid_alive(123))
+            helper.assert_called_once_with(123)
+
+    def test_signal_pid_uses_taskkill_on_windows(self):
+        with patch.object(process.os, "name", "nt"), \
+                patch.object(process, "_taskkill") as taskkill:
+            process.signal_pid(123, signal.SIGTERM)
+            taskkill.assert_called_once_with(123)
+
+    def test_terminate_pids_windows_uses_taskkill(self):
+        with patch.object(process.os, "name", "nt"), \
+                patch.object(process, "pid_alive", side_effect=[True, False]), \
+                patch.object(process, "_taskkill") as taskkill:
+            process.terminate_pids([123], timeout=0)
+        taskkill.assert_called_once_with(123)
+
+    def test_sqlite_dsn_uses_forward_slashes(self):
+        dsn = runtime.sqlite_dsn(PureWindowsPath(r"C:\Users\Test\.nlalpha"))
+        self.assertEqual(dsn, "sqlite:///C:/Users/Test/.nlalpha/backtest-jobs.db")
+
+    def test_start_service_uses_windows_creation_flags(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log_path = Path(tmp) / "service.log"
+            with patch.object(runtime.os, "name", "nt"), \
+                    patch.object(runtime.subprocess, "Popen") as popen:
+                popen.return_value = SimpleNamespace(pid=1)
+                runtime.start_service("nlalpha_data.server", {}, log_path)
+            options = popen.call_args.kwargs
+            self.assertIn("creationflags", options)
+            self.assertNotIn("start_new_session", options)
+
+    def test_start_service_uses_new_session_on_posix(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log_path = Path(tmp) / "service.log"
+            with patch.object(runtime.os, "name", "posix"), \
+                    patch.object(runtime.subprocess, "Popen") as popen:
+                popen.return_value = SimpleNamespace(pid=1)
+                runtime.start_service("nlalpha_data.server", {}, log_path)
+            options = popen.call_args.kwargs
+            self.assertTrue(options["start_new_session"])
+            self.assertNotIn("creationflags", options)

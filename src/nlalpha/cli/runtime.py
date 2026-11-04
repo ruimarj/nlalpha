@@ -53,6 +53,11 @@ def state_has_running(state: dict) -> bool:
     return any(pid_alive(pid) for pid in state_pids(state))
 
 
+def sqlite_dsn(state_dir: Path) -> str:
+    """Return a SQLite URL with forward slashes for the state directory."""
+    return f"sqlite:///{(state_dir / 'backtest-jobs.db').as_posix()}"
+
+
 def build_environment(provider: str, redis_url: str, state_dir: Path) -> dict:
     """Build the common service environment for a local run."""
     environment = os.environ.copy()
@@ -63,7 +68,7 @@ def build_environment(provider: str, redis_url: str, state_dir: Path) -> dict:
         "NLALPHA_ARTIFACT_REDIS_URL": redis_url,
         "NLALPHA_IDENTITY_MODE": "single-user",
         "NLALPHA_WORKSPACE_DIR": str(state_dir / "workspace"),
-        "JOB_STORE_DSN": f"sqlite:///{state_dir / 'backtest-jobs.db'}",
+        "JOB_STORE_DSN": sqlite_dsn(state_dir),
     })
     return environment
 
@@ -78,13 +83,18 @@ def service_environment(environment: dict, port: int) -> dict:
 def start_service(module: str, environment: dict, log_path: Path):
     """Start one service process with output redirected to a log file."""
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    options = (
+        {"start_new_session": True}
+        if os.name == "posix"
+        else {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
+    )
     with open(log_path, "ab") as log:
         return subprocess.Popen(
             [sys.executable, "-c", f"from {module} import main; main()"],
             env=environment,
             stdout=log,
             stderr=subprocess.STDOUT,
-            start_new_session=True,
+            **options,
         )
 
 

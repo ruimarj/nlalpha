@@ -67,6 +67,10 @@ nlalpha mcp-config
 - 平台适配器不包含在内；它承载平台身份、沙箱与部署语义。
 - 领域契约与逻辑位于 `nlalpha-core` 与各服务包中。`nlalpha` 分发仅提供 `nlalpha.cli` 命名空间与依赖版本锁定。
 
+## Windows
+
+Windows 原生环境需要 Python 3.12，以及 Docker Desktop 或通过 `--redis-url` 指向的已有 Redis。请在 PowerShell 中执行命令；默认状态目录展开为 `%USERPROFILE%\.nlalpha`（`~/.nlalpha` 也可用）。虚拟环境使用 `.venv\Scripts\Activate.ps1` 激活。Windows 通常没有 `redis-server`，推荐使用 Docker Desktop 启动本地 Redis。`down` 使用 `taskkill /T /F` 停止各服务进程树。
+
 ## 开发
 
 ```bash

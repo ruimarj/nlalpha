@@ -89,6 +89,15 @@ from the private index explicitly.
 - Domain contracts and logic live in `nlalpha-core` and the service packages. The
   `nlalpha` distribution only contributes the `nlalpha.cli` namespace and dependency pins.
 
+## Windows
+
+Native Windows is supported with Python 3.12 and either Docker Desktop or an existing
+Redis reachable through `--redis-url`. Run the commands from PowerShell; the default
+state directory expands to `%USERPROFILE%\.nlalpha` (`~/.nlalpha` also works). Activate a
+virtual environment with `.venv\Scripts\Activate.ps1`. `redis-server` is usually not
+installed on Windows, so Docker Desktop is the recommended local Redis. `down` stops
+each service process tree with `taskkill /T /F`.
+
 ## Development
 
 ```bash

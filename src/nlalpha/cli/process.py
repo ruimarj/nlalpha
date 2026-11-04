@@ -4,15 +4,47 @@ import os
 from pathlib import Path
 import signal
 import socket
+import subprocess
 import time
 import urllib.error
 import urllib.request
 
 STOP_TIMEOUT = 10.0
+_STILL_ACTIVE = 259
+_PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+
+
+def _pid_alive_windows(pid: int) -> bool:
+    """Return whether a Windows process id is alive without terminating it."""
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    handle = kernel32.OpenProcess(_PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+    if not handle:
+        return False
+    try:
+        code = wintypes.DWORD()
+        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+            return False
+        return code.value == _STILL_ACTIVE
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def _taskkill(pid: int) -> None:
+    """Terminate a Windows process tree."""
+    subprocess.run(
+        ["taskkill", "/PID", str(pid), "/T", "/F"],
+        capture_output=True,
+        check=False,
+    )
 
 
 def pid_alive(pid: int) -> bool:
     """Return whether a process id is alive."""
+    if os.name == "nt":
+        return _pid_alive_windows(pid)
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -24,6 +56,9 @@ def pid_alive(pid: int) -> bool:
 
 def signal_pid(pid: int, sig: int) -> None:
     """Send a signal to a process, ignoring missing processes."""
+    if os.name == "nt":
+        _taskkill(pid)
+        return
     try:
         os.kill(pid, sig)
     except ProcessLookupError:
@@ -33,14 +68,21 @@ def signal_pid(pid: int, sig: int) -> None:
 def terminate_pids(pids, timeout: float = STOP_TIMEOUT) -> None:
     """Terminate processes with SIGTERM, escalating to SIGKILL after a timeout."""
     alive = [pid for pid in pids if isinstance(pid, int) and pid_alive(pid)]
-    for pid in alive:
-        signal_pid(pid, signal.SIGTERM)
+    if os.name == "nt":
+        for pid in alive:
+            _taskkill(pid)
+    else:
+        for pid in alive:
+            signal_pid(pid, signal.SIGTERM)
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline and any(pid_alive(pid) for pid in alive):
         time.sleep(0.2)
     for pid in alive:
         if pid_alive(pid):
-            signal_pid(pid, signal.SIGKILL)
+            if os.name == "nt":
+                _taskkill(pid)
+            else:
+                signal_pid(pid, signal.SIGKILL)
 
 
 def http_ok(url: str, timeout: float = 2.0) -> bool:
