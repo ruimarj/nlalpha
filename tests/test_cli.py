@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-from nlalpha.cli import doctor, main, process, redis_support, runtime, serve, up
+from nlalpha.cli import doctor, docker_support, main, process, redis_support, runtime, serve, up
 from nlalpha.cli.errors import UpError
 
 
@@ -40,6 +40,8 @@ def _up_args(state_dir, **overrides):
         "strategy_port": 8002,
         "capability_port": 8003,
         "backtest_port": 8004,
+        "docker": False,
+        "image": docker_support.DEFAULT_IMAGE,
     }
     values.update(overrides)
     return SimpleNamespace(**values)
@@ -132,6 +134,19 @@ class MainTests(unittest.TestCase):
         self.assertEqual(args.capability_port, 8003)
         self.assertEqual(args.backtest_port, 8004)
         self.assertEqual(args.state_dir, "~/.nlalpha")
+        self.assertFalse(args.docker)
+        self.assertEqual(args.image, docker_support.DEFAULT_IMAGE)
+
+    def test_main_accepts_docker_up_options(self):
+        with patch.object(main, "run_up", return_value=3) as handler:
+            self.assertEqual(
+                main.main(["up", "--docker", "--image", "nlalpha:test", "--data-port", "8101"]),
+                3,
+            )
+        args = handler.call_args.args[0]
+        self.assertTrue(args.docker)
+        self.assertEqual(args.image, "nlalpha:test")
+        self.assertEqual(args.data_port, 8101)
 
     def test_main_dispatches_lifecycle_commands(self):
         for command, handler_name in (
@@ -205,6 +220,60 @@ class McpConfigTests(unittest.TestCase):
                 self.assertEqual(up.run_mcp_config(SimpleNamespace(state_dir=tmp)), 0)
         config = json.loads(output.getvalue())
         self.assertEqual(config["mcpServers"]["nlalpha-capability"]["url"], "http://127.0.0.1:8003/sse")
+
+
+class ComposeRenderTests(unittest.TestCase):
+    def test_render_compose_contains_services_image_ports_and_health(self):
+        ports = {"data": 8101, "strategy": 8102, "capability": 8103, "backtest": 8104}
+        text = docker_support.render_compose("nlalpha:test", ports, "yfinance")
+        self.assertIn("image: nlalpha:test", text)
+        for service, port in ports.items():
+            self.assertIn(f'command: ["serve", "{service}"]', text)
+            self.assertIn(f"127.0.0.1:{port}:", text)
+        self.assertIn("redis://redis:6379/0", text)
+        self.assertIn("sqlite:////state/backtest-jobs.db", text)
+        self.assertIn("http://127.0.0.1:8001/ready", text)
+        self.assertIn("http://127.0.0.1:8002/health", text)
+        self.assertIn("http://127.0.0.1:8003/health", text)
+        self.assertIn("http://127.0.0.1:8004/ready", text)
+        self.assertIn('NLALPHA_DATA_PROVIDER: "yfinance"', text)
+
+    def test_render_compose_uses_selected_provider(self):
+        ports = {"data": 8101, "strategy": 8102, "capability": 8103, "backtest": 8104}
+        text = docker_support.render_compose("nlalpha:test", ports, "tushare")
+        self.assertIn('NLALPHA_DATA_PROVIDER: "tushare"', text)
+
+
+class DockerSupportTests(unittest.TestCase):
+    def test_compose_up_runs_detached(self):
+        result = SimpleNamespace(returncode=0, stdout="", stderr="")
+        with patch.object(docker_support.shutil, "which", return_value="/usr/bin/docker"), \
+                patch.object(docker_support.subprocess, "run", return_value=result) as runner:
+            docker_support.compose_up(Path("state/compose.yaml"))
+        command = runner.call_args.args[0]
+        self.assertEqual(command[:2], ["/usr/bin/docker", "compose"])
+        self.assertIn("up", command)
+        self.assertIn("-d", command)
+
+    def test_compose_down_removes_orphans(self):
+        result = SimpleNamespace(returncode=0, stdout="", stderr="")
+        with patch.object(docker_support.shutil, "which", return_value="/usr/bin/docker"), \
+                patch.object(docker_support.subprocess, "run", return_value=result) as runner:
+            docker_support.compose_down(Path("state/compose.yaml"))
+        command = runner.call_args.args[0]
+        self.assertIn("down", command)
+        self.assertIn("--remove-orphans", command)
+
+    def test_compose_running_reads_running_container_ids(self):
+        result = SimpleNamespace(returncode=0, stdout="abc123\n", stderr="")
+        with patch.object(docker_support.shutil, "which", return_value="/usr/bin/docker"), \
+                patch.object(docker_support.subprocess, "run", return_value=result):
+            self.assertTrue(docker_support.compose_running(Path("state/compose.yaml")))
+
+    def test_missing_docker_fails(self):
+        with patch.object(docker_support.shutil, "which", return_value=None):
+            with self.assertRaises(UpError):
+                docker_support.compose_up(Path("state/compose.yaml"))
 
 
 class RedisTests(unittest.TestCase):
@@ -301,6 +370,69 @@ class RunUpTests(unittest.TestCase):
         self.assertIn("nlalpha mcp-config", output.getvalue())
 
 
+class DockerUpTests(unittest.TestCase):
+    def test_refuses_when_docker_state_is_running(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = {
+                "mode": "docker",
+                "compose_path": str(Path(tmp) / "compose.yaml"),
+                "services": {},
+            }
+            runtime.write_state(Path(tmp) / "run.json", state)
+            with patch.object(up, "compose_running", return_value=True), \
+                    patch.object(up, "compose_up") as starter:
+                self.assertEqual(up.run_up(_up_args(tmp, docker=True)), 1)
+        starter.assert_not_called()
+
+    def test_docker_up_writes_state_and_waits_for_health(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = StringIO()
+            with patch.object(up, "port_free", return_value=True), \
+                    patch.object(up, "compose_up") as starter, \
+                    patch.object(up, "wait_for_services", return_value=[]) as waiter, \
+                    redirect_stdout(output):
+                self.assertEqual(up.run_up(_up_args(tmp, docker=True, image="nlalpha:test")), 0)
+            compose_path = Path(tmp) / "compose.yaml"
+            state = json.loads((Path(tmp) / "run.json").read_text())
+            self.assertTrue(compose_path.exists())
+        starter.assert_called_once_with(compose_path)
+        waiter.assert_called_once()
+        self.assertEqual(state["mode"], "docker")
+        self.assertEqual(state["image"], "nlalpha:test")
+        self.assertEqual(state["compose_path"], str(compose_path))
+        self.assertEqual(state["ports"]["data"], 8001)
+        self.assertEqual(state["services"]["backtest"]["url"], "http://127.0.0.1:8004")
+        self.assertIn("Docker Compose", output.getvalue())
+
+    def test_docker_up_failure_stops_the_stack(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(up, "port_free", return_value=True), \
+                    patch.object(up, "compose_up"), \
+                    patch.object(up, "wait_for_services", return_value=["data"]), \
+                    patch.object(up, "compose_logs", return_value=""), \
+                    patch.object(up, "compose_down") as stopper:
+                self.assertEqual(up.run_up(_up_args(tmp, docker=True)), 1)
+            stopper.assert_called_once_with(Path(tmp) / "compose.yaml")
+            self.assertFalse((Path(tmp) / "run.json").exists())
+
+    def test_docker_up_rejects_redis_url(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(up, "port_free", return_value=True), \
+                    patch.object(up, "compose_up") as starter:
+                self.assertEqual(
+                    up.run_up(_up_args(tmp, docker=True, redis_url="redis://example:6379/0")),
+                    1,
+                )
+        starter.assert_not_called()
+
+    def test_docker_tushare_requires_a_token(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(up, "port_free", return_value=True), \
+                    patch.object(up, "compose_up"), \
+                    patch.dict(os.environ, {}, clear=True):
+                self.assertEqual(up.run_up(_up_args(tmp, docker=True, provider="tushare")), 1)
+
+
 class RunDownTests(unittest.TestCase):
     def test_down_terminates_services_and_removes_state(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -331,6 +463,25 @@ class RunDownTests(unittest.TestCase):
         stop_redis.assert_not_called()
         self.assertIn("not running", output.getvalue())
 
+    def test_down_docker_stops_compose_and_removes_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            compose_path = Path(tmp) / "compose.yaml"
+            compose_path.write_text("name: nlalpha\n")
+            run_path = Path(tmp) / "run.json"
+            state = {
+                "mode": "docker",
+                "compose_path": str(compose_path),
+                "ports": {"data": 8001},
+                "services": {"data": {"port": 8001}},
+            }
+            runtime.write_state(run_path, state)
+            with patch.object(up, "compose_down") as stopper, \
+                    patch.object(up, "terminate_pids") as terminate:
+                self.assertEqual(up.run_down(SimpleNamespace(state_dir=tmp)), 0)
+            self.assertFalse(run_path.exists())
+        stopper.assert_called_once_with(compose_path)
+        terminate.assert_not_called()
+
 
 class RunStatusTests(unittest.TestCase):
     def test_status_reports_services_and_redis(self):
@@ -359,6 +510,23 @@ class RunStatusTests(unittest.TestCase):
         text = output.getvalue()
         self.assertIn("port 8001", text)
         self.assertIn("Redis: not managed by nlalpha", text)
+
+    def test_status_docker_reports_compose_managed_redis(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = {
+                "mode": "docker",
+                "image": "nlalpha:test",
+                "services": {"data": {"port": 9001}},
+            }
+            runtime.write_state(Path(tmp) / "run.json", state)
+            output = StringIO()
+            with patch.object(up, "http_ok", return_value=True), redirect_stdout(output):
+                self.assertEqual(up.run_status(SimpleNamespace(state_dir=tmp)), 0)
+        text = output.getvalue()
+        self.assertIn("port 9001", text)
+        self.assertIn("healthy", text)
+        self.assertIn("Redis: managed by Docker Compose", text)
+        self.assertIn("Image: nlalpha:test", text)
 
 
 class RunStateTests(unittest.TestCase):

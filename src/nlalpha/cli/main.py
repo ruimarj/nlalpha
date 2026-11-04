@@ -3,6 +3,7 @@
 import argparse
 
 from .doctor import run_doctor
+from .docker_support import DEFAULT_IMAGE
 from .runtime import DEFAULT_PORTS
 from .serve import run_serve
 from .up import run_down, run_mcp_config, run_status, run_up
@@ -25,6 +26,8 @@ def main(argv=None) -> int:
     up = subparsers.add_parser("up", help="Start the four MCP services and a disposable Redis")
     up.add_argument("--provider", choices=("yfinance", "tushare"), default="yfinance")
     up.add_argument("--redis-url", help="Use an existing Redis instead of starting one")
+    up.add_argument("--docker", action="store_true", help="Run the stack with Docker Compose")
+    up.add_argument("--image", default=DEFAULT_IMAGE, help="Container image for --docker")
     for name, default in DEFAULT_PORTS.items():
         up.add_argument(f"--{name}-port", type=int, default=default)
     _add_state_dir(up)
