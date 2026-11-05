@@ -186,10 +186,10 @@ class EnvironmentTests(unittest.TestCase):
     def test_mcp_servers_use_default_urls(self):
         self.assertEqual(runtime.mcp_servers(runtime.DEFAULT_PORTS), {
             "mcpServers": {
-                "nlalpha-data": {"url": "http://127.0.0.1:8001/sse"},
-                "nlalpha-strategy": {"url": "http://127.0.0.1:8002/sse"},
-                "nlalpha-capability": {"url": "http://127.0.0.1:8003/sse"},
-                "nlalpha-backtest": {"url": "http://127.0.0.1:8004/sse"},
+                "nlalpha-data": {"url": "http://127.0.0.1:8001/mcp"},
+                "nlalpha-strategy": {"url": "http://127.0.0.1:8002/mcp"},
+                "nlalpha-capability": {"url": "http://127.0.0.1:8003/mcp"},
+                "nlalpha-backtest": {"url": "http://127.0.0.1:8004/mcp"},
             }
         })
 
@@ -210,8 +210,8 @@ class McpConfigTests(unittest.TestCase):
             with redirect_stdout(output):
                 self.assertEqual(up.run_mcp_config(SimpleNamespace(state_dir=tmp)), 0)
         config = json.loads(output.getvalue())
-        self.assertEqual(config["mcpServers"]["nlalpha-data"]["url"], "http://127.0.0.1:9001/sse")
-        self.assertEqual(config["mcpServers"]["nlalpha-backtest"]["url"], "http://127.0.0.1:9004/sse")
+        self.assertEqual(config["mcpServers"]["nlalpha-data"]["url"], "http://127.0.0.1:9001/mcp")
+        self.assertEqual(config["mcpServers"]["nlalpha-backtest"]["url"], "http://127.0.0.1:9004/mcp")
 
     def test_mcp_config_uses_defaults_without_state(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -219,7 +219,7 @@ class McpConfigTests(unittest.TestCase):
             with redirect_stdout(output):
                 self.assertEqual(up.run_mcp_config(SimpleNamespace(state_dir=tmp)), 0)
         config = json.loads(output.getvalue())
-        self.assertEqual(config["mcpServers"]["nlalpha-capability"]["url"], "http://127.0.0.1:8003/sse")
+        self.assertEqual(config["mcpServers"]["nlalpha-capability"]["url"], "http://127.0.0.1:8003/mcp")
 
 
 class ComposeRenderTests(unittest.TestCase):
