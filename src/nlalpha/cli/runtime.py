@@ -127,7 +127,7 @@ def mcp_servers(ports: dict) -> dict:
     """Build MCP client configuration for the local services."""
     return {
         "mcpServers": {
-            f"nlalpha-{name}": {"url": f"http://127.0.0.1:{ports[name]}/sse"}
+            f"nlalpha-{name}": {"url": f"http://127.0.0.1:{ports[name]}/mcp"}
             for name in SERVICES
         }
     }

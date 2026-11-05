@@ -21,15 +21,15 @@ docker compose up -d
 | capability | `http://127.0.0.1:8003` | `/health` |
 | backtest | `http://127.0.0.1:8004` | `/ready` |
 
-MCP 客户端连接各服务的 `/sse` 端点：
+MCP 客户端连接各服务的 `/mcp` 端点：
 
 ```json
 {
   "mcpServers": {
-    "nlalpha-data": {"url": "http://127.0.0.1:8001/sse"},
-    "nlalpha-strategy": {"url": "http://127.0.0.1:8002/sse"},
-    "nlalpha-capability": {"url": "http://127.0.0.1:8003/sse"},
-    "nlalpha-backtest": {"url": "http://127.0.0.1:8004/sse"}
+    "nlalpha-data": {"url": "http://127.0.0.1:8001/mcp"},
+    "nlalpha-strategy": {"url": "http://127.0.0.1:8002/mcp"},
+    "nlalpha-capability": {"url": "http://127.0.0.1:8003/mcp"},
+    "nlalpha-backtest": {"url": "http://127.0.0.1:8004/mcp"}
   }
 }
 ```
@@ -44,11 +44,11 @@ docker compose down
 
 ### 配置
 
-默认镜像为 `ghcr.io/ruimarj/nlalpha:0.1.7`。在 `docker compose up -d` 前设置以下变量可更换镜像、端口或数据提供方：
+默认镜像为 `ghcr.io/ruimarj/nlalpha:0.2.0`。在 `docker compose up -d` 前设置以下变量可更换镜像、端口或数据提供方：
 
 | 变量 | 默认值 | 用途 |
 |---|---|---|
-| `NLALPHA_IMAGE` | `ghcr.io/ruimarj/nlalpha:0.1.7` | 容器镜像。 |
+| `NLALPHA_IMAGE` | `ghcr.io/ruimarj/nlalpha:0.2.0` | 容器镜像。 |
 | `NLALPHA_DATA_PORT` | `8001` | data 服务的宿主端口。 |
 | `NLALPHA_STRATEGY_PORT` | `8002` | strategy 服务的宿主端口。 |
 | `NLALPHA_CAPABILITY_PORT` | `8003` | capability 服务的宿主端口。 |
@@ -111,7 +111,7 @@ nlalpha mcp-config
 | `--provider` | `yfinance` | 数据提供方；`tushare` 需要 `TUSHARE_TOKEN`（发布镜像已内置；Python 安装使用 `china` 附加项）。 |
 | `--redis-url` | 一次性 Redis | 使用已有 Redis，而不是新启动一个。 |
 | `--docker` | 关闭 | 使用 Docker Compose 运行栈。 |
-| `--image` | `ghcr.io/ruimarj/nlalpha:0.1.7` | `--docker` 使用的镜像。 |
+| `--image` | `ghcr.io/ruimarj/nlalpha:0.2.0` | `--docker` 使用的镜像。 |
 | `--data-port` | `8001` | data 服务端口。 |
 | `--strategy-port` | `8002` | strategy 服务端口。 |
 | `--capability-port` | `8003` | capability 服务端口。 |

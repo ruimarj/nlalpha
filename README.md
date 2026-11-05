@@ -24,15 +24,15 @@ loopback:
 | capability | `http://127.0.0.1:8003` | `/health` |
 | backtest | `http://127.0.0.1:8004` | `/ready` |
 
-MCP clients connect to the `/sse` endpoint of each service:
+MCP clients connect to the `/mcp` endpoint of each service:
 
 ```json
 {
   "mcpServers": {
-    "nlalpha-data": {"url": "http://127.0.0.1:8001/sse"},
-    "nlalpha-strategy": {"url": "http://127.0.0.1:8002/sse"},
-    "nlalpha-capability": {"url": "http://127.0.0.1:8003/sse"},
-    "nlalpha-backtest": {"url": "http://127.0.0.1:8004/sse"}
+    "nlalpha-data": {"url": "http://127.0.0.1:8001/mcp"},
+    "nlalpha-strategy": {"url": "http://127.0.0.1:8002/mcp"},
+    "nlalpha-capability": {"url": "http://127.0.0.1:8003/mcp"},
+    "nlalpha-backtest": {"url": "http://127.0.0.1:8004/mcp"}
   }
 }
 ```
@@ -48,12 +48,12 @@ workspace and the backtest job store.
 
 ### Configuration
 
-The default image is `ghcr.io/ruimarj/nlalpha:0.1.7`. Set these variables before
+The default image is `ghcr.io/ruimarj/nlalpha:0.2.0`. Set these variables before
 `docker compose up -d` to change the image, ports, or data provider:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `NLALPHA_IMAGE` | `ghcr.io/ruimarj/nlalpha:0.1.7` | Container image. |
+| `NLALPHA_IMAGE` | `ghcr.io/ruimarj/nlalpha:0.2.0` | Container image. |
 | `NLALPHA_DATA_PORT` | `8001` | Host port for the data service. |
 | `NLALPHA_STRATEGY_PORT` | `8002` | Host port for the strategy service. |
 | `NLALPHA_CAPABILITY_PORT` | `8003` | Host port for the capability service. |
@@ -126,7 +126,7 @@ nlalpha mcp-config
 | `--provider` | `yfinance` | Data provider; `tushare` requires `TUSHARE_TOKEN` (included in the published image; Python installs use the `china` extra). |
 | `--redis-url` | disposable Redis | Use an existing Redis instead of starting one. |
 | `--docker` | off | Run the stack with Docker Compose. |
-| `--image` | `ghcr.io/ruimarj/nlalpha:0.1.7` | Image used with `--docker`. |
+| `--image` | `ghcr.io/ruimarj/nlalpha:0.2.0` | Image used with `--docker`. |
 | `--data-port` | `8001` | Data service port. |
 | `--strategy-port` | `8002` | Strategy service port. |
 | `--capability-port` | `8003` | Capability service port. |

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nlalpha"
-version = "0.1.7"
+version = "0.2.0"
 description = "Install-and-use bundle for the NLAlpha community backtesting stack"
 readme = "README.md"
 license = "AGPL-3.0-or-later"
@@ -12,10 +12,10 @@ license-files = ["LICENSE"]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "nlalpha-core==0.7.0",
-    "nlalpha-data==0.4.0",
-    "nlalpha-strategy==0.2.0",
-    "nlalpha-backtest==0.8.0",
-    "nlalpha-capability==0.2.0",
+    "nlalpha-data==0.5.0",
+    "nlalpha-strategy==0.3.0",
+    "nlalpha-backtest==0.9.0",
+    "nlalpha-capability==0.3.0",
     "nlalpha-family-cta==0.4.0",
     "nlalpha-nautilus==0.9.1",
     "nlalpha-talib==0.2.0",
@@ -25,7 +25,7 @@ dependencies = [
 
 [project.optional-dependencies]
 china = ["nlalpha-tushare==0.3.2"]
-s3 = ["nlalpha-data[s3]==0.4.0", "nlalpha-backtest[redis]==0.8.0"]
+s3 = ["nlalpha-data[s3]==0.5.0", "nlalpha-backtest[redis]==0.9.0"]
 
 [project.scripts]
 nlalpha = "nlalpha.cli.main:main"
