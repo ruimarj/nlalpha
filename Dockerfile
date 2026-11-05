@@ -1,5 +1,9 @@
 FROM python:3.12-slim
 
+LABEL org.opencontainers.image.source="https://github.com/ruimarj/nlalpha" \
+      org.opencontainers.image.description="Install-and-use bundle for the NLAlpha quantitative research stack" \
+      org.opencontainers.image.licenses="AGPL-3.0-or-later"
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
