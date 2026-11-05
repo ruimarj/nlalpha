@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nlalpha"
-version = "0.2.3"
+version = "0.2.4"
 description = "Install-and-use bundle for the NLAlpha community backtesting stack"
 readme = "README.md"
 license = "AGPL-3.0-or-later"
@@ -20,7 +20,7 @@ dependencies = [
     "nlalpha-nautilus==0.9.2",
     "nlalpha-talib==0.2.0",
     "nlalpha-performance==0.6.0",
-    "nlalpha-yfinance==0.1.1",
+    "nlalpha-yfinance==0.1.2",
 ]
 
 [project.optional-dependencies]
