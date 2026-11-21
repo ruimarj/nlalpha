@@ -146,3 +146,7 @@ pip install "nlalpha[china]"
 - 本地栈将服务绑定到 `127.0.0.1` 并使用单用户身份，面向开发与快速开始，不是加固的多用户部署。
 - 平台适配器不包含在内；它承载平台身份、沙箱与部署语义。
 - 领域契约与逻辑位于 `nlalpha-core` 与各服务包中。`nlalpha` 分发仅提供 `nlalpha.cli` 命名空间与依赖版本锁定。
+
+## 许可证
+
+版权所有 (c) 2026 Rui Ma。以 AGPL-3.0-or-later 授权，详见 [LICENSE](LICENSE)。

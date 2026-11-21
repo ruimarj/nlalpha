@@ -175,3 +175,7 @@ usually provided by Docker Desktop. The default state directory expands to
 - Domain contracts and logic live in `nlalpha-core` and the service packages. The
   `nlalpha` distribution only contributes the `nlalpha.cli` namespace and dependency
   pins.
+
+## License
+
+Copyright (c) 2026 Rui Ma. Licensed under AGPL-3.0-or-later; see [LICENSE](LICENSE).
